@@ -22,6 +22,8 @@ jobs:
       uses: davidB/rust-cargo-make@v1
     - name: Run CI
       uses: actions-rs/cargo@v1
+      env:
+        VALIDATORS_APP_TOKEN: ${{ secrets.VALIDATORS_APP_TOKEN }}
       with:
         command: make
         args: ci-flow
