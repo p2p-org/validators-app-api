@@ -2,6 +2,8 @@ use reqwest::{blocking::Client as HttpClient, Result as HttpResult, Url};
 
 use crate::models::*;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
+#[cfg(feature = "pubkey")]
+use solana_sdk::pubkey::Pubkey;
 
 pub struct Client {
     client: HttpClient,
@@ -54,11 +56,14 @@ impl Client {
             (None, None) => (),
         }
 
-        println!("RESP: {:?}", self.client.get(url.clone()).send()?.text());
         self.client.get(url).send()?.json()
     }
 
-    pub fn get_validator(&self, account: &str) -> HttpResult<ValidatorDetail> {
+    pub fn get_validator(
+        &self,
+        #[cfg(feature = "pubkey")] account: &Pubkey,
+        #[cfg(not(feature = "pubkey"))] account: &str,
+    ) -> HttpResult<ValidatorDetail> {
         self.client
             .get(&format!(
                 "{}/validators/{}/{}.json",
@@ -70,7 +75,8 @@ impl Client {
 
     pub fn get_validator_block_history(
         &self,
-        account: &str,
+        #[cfg(feature = "pubkey")] account: &Pubkey,
+        #[cfg(not(feature = "pubkey"))] account: String,
         limit: Option<usize>,
     ) -> HttpResult<ValidatorBlockHistory> {
         let url = match limit {

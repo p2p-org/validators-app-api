@@ -12,3 +12,14 @@ serde_derive = "1.0.126"
 serde = "1.0.126"
 log = "0.4.14"
 reqwest = { version = "0.11.3", features = ["blocking", "rustls-tls", "json"] }
+chrono = { version = "0.4.19", optional = true, features = ["serde"] }
+uuid = { version = "0.8.2", optional = true, features = ["serde"] }
+solana-sdk = { version = "1.6", optional = true }
+semver = { version = "1.0.3", optional = true, features = ["serde"] }
+
+[features]
+default = ["native_types"]
+native_types = ["time", "uuid", "pubkey", "ipaddr", "semver"]
+time = ["chrono"]
+pubkey = ["solana-sdk"]
+ipaddr = []
