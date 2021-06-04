@@ -1,4 +1,9 @@
 pub mod client;
 pub mod models;
 
-pub use client::Client;
+pub mod prelude {
+    pub use super::{
+        client::Client,
+        models::{Network, ValidatorsOrder},
+    };
+}
