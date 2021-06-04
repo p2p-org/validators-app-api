@@ -13,6 +13,30 @@ condition = { files_not_exist = ["${HOME}/.rustup/toolchains/nightly-2021-04-25-
 command = "rustup"
 args = ["toolchain", "install", "nightly-2021-04-25"]
 
+[tasks.test-flow]
+dependencies = [
+    "test-sync-typed",
+    "test-async-typed",
+    "test-sync-untyped",
+    "test-async-untyped",
+]
+
+[tasks.test-sync-typed]
+command = "cargo"
+args = ["test", "--no-default-features", "--features", "native_types,sync"]
+
+[tasks.test-async-typed]
+command = "cargo"
+args = ["test", "--no-default-features", "--features", "native_types"]
+
+[tasks.test-sync-untyped]
+command = "cargo"
+args = ["test", "--no-default-features", "--features", "sync"]
+
+[tasks.test-async-untyped]
+command = "cargo"
+args = ["test", "--no-default-features"]
+
 [tasks.ci-flow]
 dependencies = [
     "print-cargo-make-env",
@@ -27,5 +51,5 @@ dependencies = [
     "check",
     "clippy",
     "build",
-    "test",
+    "test-flow",
 ]

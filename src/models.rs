@@ -23,6 +23,19 @@ where
     value.parse().map_err(serde::de::Error::custom)
 }
 
+pub fn deserialize_option_with_fromstr<'de, T, D>(d: D) -> Result<Option<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: FromStr,
+    T::Err: Display,
+{
+    if let Some(value) = Option::<String>::deserialize(d)? {
+        value.parse().map_err(serde::de::Error::custom).map(Some)
+    } else {
+        Ok(None)
+    }
+}
+
 #[derive(Eq, PartialEq, Debug, Copy, Clone, Deserialize)]
 pub enum Network {
     #[serde(rename = "testnet")]
@@ -133,8 +146,8 @@ pub struct ValidatorDetail {
     pub account: String,
     pub name: Option<String>,
     pub keybase_id: Option<String>,
-    pub www_url: String,
-    pub details: String,
+    pub www_url: Option<String>,
+    pub details: Option<String>,
 
     #[cfg(not(feature = "chrono"))]
     pub created_at: String,
@@ -156,7 +169,7 @@ pub struct ValidatorDetail {
     pub software_version: Option<String>,
     pub software_version_score: i32,
     pub stake_concentration_score: Option<i32>,
-    pub data_center_concentration_score: i32,
+    pub data_center_concentration_score: Option<i32>,
     pub published_information_score: i32,
     pub security_report_score: i32,
     pub active_stake: Option<u64>,
@@ -164,17 +177,19 @@ pub struct ValidatorDetail {
     pub delinquent: Option<bool>,
     pub data_center_key: Option<String>,
     pub data_center_host: Option<String>,
+    #[serde(default)]
     pub autonomous_system_number: u32,
 
     #[cfg(feature = "pubkey")]
-    #[serde(deserialize_with = "deserialize_with_fromstr")]
-    pub vote_account: Pubkey,
+    #[serde(deserialize_with = "deserialize_option_with_fromstr", default)]
+    pub vote_account: Option<Pubkey>,
     #[cfg(not(feature = "pubkey"))]
-    pub vote_account: String,
+    #[serde(default)]
+    pub vote_account: Option<String>,
 
     pub skipped_slots: Option<u64>,
 
-    #[serde(deserialize_with = "deserialize_with_fromstr")]
+    #[serde(deserialize_with = "deserialize_with_fromstr", default)]
     pub skipped_slot_percent: f64,
 
     pub ping_time: Option<String>,
@@ -188,7 +203,7 @@ pub struct ValidatorBlock {
     pub blocks_produced: u64,
     pub skipped_slots: u64,
 
-    #[serde(deserialize_with = "deserialize_with_fromstr")]
+    #[serde(deserialize_with = "deserialize_with_fromstr", default)]
     pub skipped_slot_percent: f64,
 
     #[cfg(feature = "chrono")]
