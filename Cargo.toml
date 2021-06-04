@@ -11,15 +11,20 @@ serde_json = "1"
 serde_derive = "1"
 serde = "1"
 log = "0.4"
-reqwest = { version = "0.11", features = ["blocking", "rustls-tls", "json"] }
+reqwest = { version = "0.11", features = ["rustls-tls", "json"] }
 chrono = { version = "0.4", optional = true, features = ["serde"] }
 uuid = { version = "0.8", optional = true, features = ["serde"] }
 solana-sdk = { version = "1.6", optional = true }
 semver = { version = "1", optional = true, features = ["serde"] }
+maybe-async = "0.2.6"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
 
 [features]
-default = ["native_types"]
+default = ["native_types", "sync"]
 native_types = ["time", "uuid", "pubkey", "ipaddr", "semver"]
 time = ["chrono"]
 pubkey = ["solana-sdk"]
 ipaddr = []
+sync = ["reqwest/blocking", "maybe-async/is_sync"]

@@ -1,15 +1,17 @@
 #[cfg(feature = "time")]
-use chrono::DateTime;
+use chrono::{DateTime, Utc};
 #[cfg(feature = "uuid")]
 use uuid::Uuid;
 
-use chrono::Utc;
 use serde::{Deserialize, Deserializer};
 use std::fmt;
 
 #[cfg(feature = "pubkey")]
 use solana_sdk::pubkey::Pubkey;
-use std::{fmt::Display, net::IpAddr, str::FromStr};
+use std::{fmt::Display, str::FromStr};
+
+#[cfg(feature = "ipaddr")]
+use std::net::IpAddr;
 
 pub fn deserialize_with_fromstr<'de, T, D>(d: D) -> Result<T, D::Error>
 where
@@ -70,7 +72,7 @@ pub struct PingTime {
     #[serde(deserialize_with = "deserialize_with_fromstr")]
     pub to_account: Pubkey,
     #[cfg(not(feature = "pubkey"))]
-    pub from_account: String,
+    pub to_account: String,
 
     #[cfg(feature = "ipaddr")]
     pub to_ip: IpAddr,
@@ -144,19 +146,19 @@ pub struct ValidatorDetail {
     #[cfg(feature = "chrono")]
     pub updated_at: DateTime<Utc>,
 
-    pub total_score: u32,
-    pub root_distance_score: u32,
-    pub vote_distance_score: u32,
-    pub skipped_slot_score: u32,
+    pub total_score: i32,
+    pub root_distance_score: i32,
+    pub vote_distance_score: i32,
+    pub skipped_slot_score: i32,
     #[cfg(feature = "semver")]
     pub software_version: Option<semver::Version>,
     #[cfg(not(feature = "semver"))]
     pub software_version: Option<String>,
-    pub software_version_score: u32,
-    pub stake_concentration_score: Option<u32>,
-    pub data_center_concentration_score: u32,
-    pub published_information_score: u32,
-    pub security_report_score: u32,
+    pub software_version_score: i32,
+    pub stake_concentration_score: Option<i32>,
+    pub data_center_concentration_score: i32,
+    pub published_information_score: i32,
+    pub security_report_score: i32,
     pub active_stake: Option<u64>,
     pub commission: Option<u32>,
     pub delinquent: Option<bool>,
@@ -170,7 +172,7 @@ pub struct ValidatorDetail {
     #[cfg(not(feature = "pubkey"))]
     pub vote_account: String,
 
-    pub skipped_slots: u64,
+    pub skipped_slots: Option<u64>,
 
     #[serde(deserialize_with = "deserialize_with_fromstr")]
     pub skipped_slot_percent: f64,

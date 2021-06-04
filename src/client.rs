@@ -1,4 +1,10 @@
-use reqwest::{blocking::Client as HttpClient, Result as HttpResult, Url};
+#[cfg(feature = "sync")]
+use reqwest::blocking::Client as HttpClient;
+#[cfg(not(feature = "sync"))]
+use reqwest::Client as HttpClient;
+use reqwest::{Result as HttpResult, Url};
+
+use maybe_async::maybe_async;
 
 use crate::models::*;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
@@ -35,19 +41,27 @@ impl Client {
         })
     }
 
-    pub fn ping(&self) -> HttpResult<Ping> {
-        self.client.get(format!("{}/ping.json", self.base_url)).send()?.json()
+    #[maybe_async]
+    pub async fn ping(&self) -> HttpResult<Ping> {
+        self.client
+            .get(format!("{}/ping.json", self.base_url))
+            .send()
+            .await?
+            .json()
+            .await
     }
 
-    pub fn get_ping_times(&self, limit: Option<usize>) -> HttpResult<PingTimes> {
+    #[maybe_async]
+    pub async fn get_ping_times(&self, limit: Option<usize>) -> HttpResult<PingTimes> {
         let url = match limit {
             None => format!("{}/ping-times/{}.json", self.base_url, self.network),
             Some(limit) => format!("{}/ping-times/{}.json?limit={}", self.base_url, self.network, limit),
         };
-        self.client.get(url).send()?.json()
+        self.client.get(url).send().await?.json().await
     }
 
-    pub fn get_validators(&self, order: Option<ValidatorsOrder>, limit: Option<usize>) -> HttpResult<Validators> {
+    #[maybe_async]
+    pub async fn get_validators(&self, order: Option<ValidatorsOrder>, limit: Option<usize>) -> HttpResult<Validators> {
         let mut url = Url::parse(&format!("{}/validators/{}.json", self.base_url, self.network)).expect("invalid url");
         match (order, limit) {
             (Some(order), Some(limit)) => url.set_query(Some(&format!("order={}&limit={}", order, limit))),
@@ -56,10 +70,11 @@ impl Client {
             (None, None) => (),
         }
 
-        self.client.get(url).send()?.json()
+        self.client.get(url).send().await?.json().await
     }
 
-    pub fn get_validator(
+    #[maybe_async]
+    pub async fn get_validator(
         &self,
         #[cfg(feature = "pubkey")] account: &Pubkey,
         #[cfg(not(feature = "pubkey"))] account: &str,
@@ -69,14 +84,17 @@ impl Client {
                 "{}/validators/{}/{}.json",
                 self.base_url, self.network, account
             ))
-            .send()?
+            .send()
+            .await?
             .json()
+            .await
     }
 
-    pub fn get_validator_block_history(
+    #[maybe_async]
+    pub async fn get_validator_block_history(
         &self,
         #[cfg(feature = "pubkey")] account: &Pubkey,
-        #[cfg(not(feature = "pubkey"))] account: String,
+        #[cfg(not(feature = "pubkey"))] account: &str,
         limit: Option<usize>,
     ) -> HttpResult<ValidatorBlockHistory> {
         let url = match limit {
@@ -89,10 +107,11 @@ impl Client {
                 self.base_url, self.network, account, limit
             ),
         };
-        self.client.get(url).send()?.json()
+        self.client.get(url).send().await?.json().await
     }
 
-    pub fn get_epochs(&self, items_per_page: Option<usize>, page: Option<usize>) -> HttpResult<EpochIndex> {
+    #[maybe_async]
+    pub async fn get_epochs(&self, items_per_page: Option<usize>, page: Option<usize>) -> HttpResult<EpochIndex> {
         let mut url = Url::parse(&format!("{}/epochs/{}.json", self.base_url, self.network)).expect("invalid url");
         match (items_per_page, page) {
             (Some(per), Some(limit)) => url.set_query(Some(&format!("per={}&limit={}", per, limit))),
@@ -101,7 +120,7 @@ impl Client {
             (None, None) => (),
         }
 
-        self.client.get(url).send()?.json()
+        self.client.get(url).send().await?.json().await
     }
 }
 
@@ -109,23 +128,24 @@ impl Client {
 mod tests {
     use super::Client;
 
-    #[test]
-    fn test_epochs() {
+    #[maybe_async::test(feature = "sync", async(not(feature = "sync"), tokio::test))]
+    async fn test_epochs() {
         let token = std::env::var("VALIDATORS_APP_TOKEN").unwrap();
         let client = Client::new(&token).unwrap();
-        let reply = client.get_epochs(Some(1), None).unwrap();
+        let reply = client.get_epochs(Some(1), None).await.unwrap();
         println!("{:?}", reply);
         assert_eq!(reply.epochs.len(), 1);
         assert!(reply.epochs_count >= 1);
     }
 
-    #[test]
-    fn test_validator_block_history() {
+    #[maybe_async::test(feature = "sync", async(not(feature = "sync"), tokio::test))]
+    async fn test_validator_block_history() {
         let token = std::env::var("VALIDATORS_APP_TOKEN").unwrap();
         let client = Client::new(&token).unwrap();
-        let validators = client.get_validators(None, Some(1)).unwrap();
+        let validators = client.get_validators(None, Some(1)).await.unwrap();
         let reply = client
             .get_validator_block_history(&validators[0].account, Some(100))
+            .await
             .unwrap();
         assert_eq!(reply.len(), 100);
     }
