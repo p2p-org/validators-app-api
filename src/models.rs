@@ -36,6 +36,19 @@ where
     }
 }
 
+#[cfg(feature = "semver")]
+pub fn deserialize_option_version<'de, D>(d: D) -> Result<Option<semver::Version>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    match Option::<&str>::deserialize(d)? {
+        None | Some("unknown") => Ok(None),
+        Some(version) => semver::Version::parse(version)
+            .map_err(serde::de::Error::custom)
+            .map(Some),
+    }
+}
+
 #[derive(Eq, PartialEq, Debug, Copy, Clone, Deserialize)]
 pub enum Network {
     #[serde(rename = "testnet")]
@@ -164,6 +177,7 @@ pub struct ValidatorDetail {
     pub vote_distance_score: i32,
     pub skipped_slot_score: i32,
     #[cfg(feature = "semver")]
+    #[serde(deserialize_with = "deserialize_option_version")]
     pub software_version: Option<semver::Version>,
     #[cfg(not(feature = "semver"))]
     pub software_version: Option<String>,
